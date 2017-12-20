@@ -1,8 +1,10 @@
 'use strict'
 
-var sha1 = require('sha1');
-var Promise = require('bluebird')
-var request = Promise.promisify(require('request'))
+var sha1 = require('sha1');  // 加密模块
+// bluebird。 Promise是异步代码 实现控制流 的一种方式。 使代码干净、可读、健壮
+var Promise = require('bluebird') 
+// request模块让http请求变的更加简单。(作为客户端，去请求、抓取另一个网站的信息) 
+var request = Promise.promisify(require('request')) 
 
 var prefix = 'https://api.weixin.qq.com/cgi-bin/'
 var api = {
@@ -17,7 +19,7 @@ function Wechat(opts) {
     this.saveAccessToken = opts.saveAccessToken
 
     this.getAccessToken()
-        .then(function(data) {
+        .then(function(data) { // 获取 access_token 后判断
             console.log(data)            
             try{
                 data = JSON.parse(data)
@@ -31,8 +33,8 @@ function Wechat(opts) {
                 return that.updateAccessToken()
             }
         })
-        .then(function(data) {
-            console.log(data)
+        .then(function(data) { // 判断后保存
+            // console.log(data)
             that.access_token = data.access_token
             that.expires_in = data.expires_in
 
@@ -41,7 +43,7 @@ function Wechat(opts) {
         })
 }
 
-Wechat.prototype.isValidAccessToken = function(data) {
+Wechat.prototype.isValidAccessToken = function(data) { // 判断 access_token 是否在有效期内
     if (!data || !data.access_token || !data.expires_in) {
        return false
     }
@@ -56,13 +58,14 @@ Wechat.prototype.isValidAccessToken = function(data) {
     }
 }
 
-Wechat.prototype.updateAccessToken = function() {
+Wechat.prototype.updateAccessToken = function() { // 更新、获取 access_token
     var appID = this.appID
     var appSecret = this.appSecret
-    console.log(appSecret)
+    // console.log(appSecret)
     var url = api.accessToken + '&appid=' + appID + '&secret=' + appSecret 
 
     return new Promise(function(resolve, reject) {
+        // 请求微信接口 获取 access_token
         request({url: url, json: true}).then(function(response){
             var data = response[1]
             // var data = response.body
@@ -76,9 +79,10 @@ Wechat.prototype.updateAccessToken = function() {
     })
 }
 
-module.exports = function(opts) {
-    var wechat = new Wechat(opts)
-    return function *(next) {
+module.exports = function(opts) {  // 把方法暴露出去
+    var wechat = new Wechat(opts)  // 实例化Wechat，为了获取access_token
+
+    return function *(next) {      // 验证 微信信息
         console.log(this.query)
 
         var token = opts.token
