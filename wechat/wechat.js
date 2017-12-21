@@ -3,7 +3,7 @@
 var Promise = require('bluebird') 
 // request模块让http请求变的更加简单。(作为客户端，去请求、抓取另一个网站的信息) 
 var request = Promise.promisify(require('request')) 
-
+var util = require('./util')
 var prefix = 'https://api.weixin.qq.com/cgi-bin/'
 var api = {
     accessToken: prefix + 'token?grant_type=client_credential'
@@ -75,6 +75,16 @@ Wechat.prototype.updateAccessToken = function() { // 更新、获取 access_toke
             resolve(data)
         }) 
     })
+}
+
+Wechat.prototype.reply = function() {
+    var content = this.body
+    var message = this.weixin
+    var xml = util.tpl(content, message)
+
+    this.status = 200
+    this.type = 'application/xml'
+    this.body = xml
 }
 
 module.exports = Wechat

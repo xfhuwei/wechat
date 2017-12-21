@@ -5,7 +5,7 @@ var getRawBody = require('raw-body') // 用于 解析 微信回传的xml
 var Wechat = require('./wechat') 
 var util = require('./util') 
 
-module.exports = function(opts) {  // 把方法暴露出去
+module.exports = function(opts, handler) {  // 把方法暴露出去
     var wechat = new Wechat(opts)  // 实例化Wechat，为了获取access_token
 
     return function *(next) {      // 验证 微信信息
@@ -47,32 +47,11 @@ module.exports = function(opts) {  // 把方法暴露出去
 
             console.log(message)
 
-            if (message.MsgType === 'event') { 
-                if (message.Event === 'subscribe') { // 如果是关注事件
-                    var now = new Date().getTime()
+            that.weixin = message 
 
-                    that.status = 200
-                    that.type = 'application/xml'
-                    // that.body = '<xml>' + 
-                    // '<ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>' +
-                    // '<FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>' +
-                    // '<CreateTime>'+ now +'</CreateTime>' +
-                    // '<MsgType><![CDATA[text]]></MsgType>' +
-                    // '<Content><![CDATA[谢谢关注，这是一个用koa@1.2.0写的公众号]]></Content>' +
-                    // '</xml>';
-                    that.body = 
-                        `<xml> 
-                            <ToUserName><![CDATA[${message.FromUserName}]]></ToUserName>
-                            <FromUserName><![CDATA[${message.ToUserName}]]></FromUserName>
-                            <CreateTime>${now}</CreateTime>
-                            <MsgType><![CDATA[text]]></MsgType>
-                            <Content><![CDATA[谢谢关注，这是一个用koa@1.2.0写的订阅号]]></Content>
-                        </xml>`
+            yield handler.call(that, next)
 
-                    // console.log(that.body)
-                    return
-                }
-            }
+            wechat.reply.call(that)
         }
     }
 }
