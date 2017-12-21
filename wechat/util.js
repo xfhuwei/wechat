@@ -1,9 +1,9 @@
 'use strict'
 
-var xml2js = require('xml2js')
+var xml2js = require('xml2js')  // 简单的XML到JavaScript对象转换器。
 var Promise = require('bluebird')
 
-exports.parseXMLAsync = function(xml) {
+exports.parseXMLAsync = function(xml) { // 异步解析XML
     return new Promise(function(resolve, reject) {
         xml2js.parseString(xml, {trim: true}, function(err, content) {
             if (err) reject(err)
@@ -12,23 +12,23 @@ exports.parseXMLAsync = function(xml) {
     })
 }
 
-function formatMessage(result) {
+function formatMessage(result) { // 格式化 结果对象
     var message = {}
 
-    if(typeof result === 'object') {
+    if (typeof result === 'object') {
         var keys = Object.keys(result)
 
-        for(var i = 0; i < keys.length; i++) {
+        for (var i = 0; i < keys.length; i++) {
             var item = result[keys[i]]
             var key = keys[i]
 
-            if(!(item instanceof Array) || item.length === 0) {
+            if (!(item instanceof Array) || item.length === 0) {
                 continue
             } 
             if (item.length === 1) {
                 var val = item[0]
 
-                if(typeof val === 'object') {
+                if (typeof val === 'object') {
                     message[key] = formatMessage(val)
                 } else {
                     message[key] = (val || '').trim()

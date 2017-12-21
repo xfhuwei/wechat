@@ -1,5 +1,4 @@
 'use strict'
-var Promise = require('bluebird') 
 // bluebird。 Promise是异步代码 实现控制流 的一种方式。 使代码干净、可读、健壮
 var Promise = require('bluebird') 
 // request模块让http请求变的更加简单。(作为客户端，去请求、抓取另一个网站的信息) 
