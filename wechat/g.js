@@ -47,11 +47,12 @@ module.exports = function(opts, handler) {  // 把方法暴露出去
 
             console.log(message)
 
-            that.weixin = message 
+            this.weixin = message   // 挂载消息
 
-            yield handler.call(that, next)
+            yield handler.call(this, next)  // 转到业务层逻辑
 
-            wechat.reply.call(that)
+            wechat.reply.call(this)  // 真正回复
+
         }
     }
 }

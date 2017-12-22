@@ -1,10 +1,10 @@
 'use strict'
 
-var ejs = require('ejs')
-var heredoc = require('heredoc')
+var ejs = require('ejs')  // ejs模块: 嵌入式js模板
+var heredoc = require('heredoc') // heredoc模块：多行字符串的js
 
 var tpl = heredoc(function() {/*
-        <xml> 
+    <xml> 
         <ToUserName><![CDATA[<%= toUserName %>]]></ToUserName>
         <FromUserName><![CDATA[<%= fromUserName %>]]></FromUserName>
         <CreateTime><%= createTime %></CreateTime>
@@ -15,15 +15,15 @@ var tpl = heredoc(function() {/*
             <Content><![CDATA[<%= content %>]]></Content>
         <% } else if (msgType === 'image') { %>
             <Image>
-                <MediaId><![CDATA[<%= content.media_id %>]]></MediaId>
+                <MediaId><![CDATA[<%= content.mediaId %>]]></MediaId>
             </Image>
         <% } else if (msgType === 'voice') { %>
             <Voice>
-                <MediaId><![CDATA[<%= content.media_id %>]]></MediaId>
+                <MediaId><![CDATA[<%= content.mediaId %>]]></MediaId>
             </Voice>
         <% } else if (msgType === 'video') { %>
             <Video>
-                <MediaId><![CDATA[<%= content.media_id %>]]></MediaId>
+                <MediaId><![CDATA[<%= content.mediaId %>]]></MediaId>
                 <Title><![CDATA[<%= content.title %>]]></Title>
                 <Description><![CDATA[<%= content.description %>]]></Description>
             </Video>
@@ -48,7 +48,7 @@ var tpl = heredoc(function() {/*
             <% }) %>
             </Articles>
         <% } %>       
-        </xml>
+    </xml>
 */})
 
 var compiled = ejs.compile(tpl)
