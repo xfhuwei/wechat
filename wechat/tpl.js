@@ -40,10 +40,10 @@ var tpl = heredoc(function() {/*
             <Articles>
             <% content.forEach(function(item) { %>
                 <item>
-                    <Title><![CDATA[<%= content.title %>]]></Title>
-                    <Description><![CDATA[<%= content.description %>]]></Description>
-                    <PicUrl><![CDATA[<%= content.picurl %>]]></PicUrl>
-                    <Url><![CDATA[<%= content.url %>]]></Url>
+                    <Title><![CDATA[<%= item.title %>]]></Title>
+                    <Description><![CDATA[<%= item.description %>]]></Description>
+                    <PicUrl><![CDATA[<%= item.picUrl %>]]></PicUrl>
+                    <Url><![CDATA[<%= item.url %>]]></Url>
                 </item>
             <% }) %>
             </Articles>

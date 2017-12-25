@@ -4,9 +4,12 @@ var Promise = require('bluebird')
 // request模块让http请求变的更加简单。(作为客户端，去请求、抓取另一个网站的信息) 
 var request = Promise.promisify(require('request')) 
 var util = require('./util')
+var fs = require('fs')
+
 var prefix = 'https://api.weixin.qq.com/cgi-bin/'
 var api = {
-    accessToken: prefix + 'token?grant_type=client_credential'
+    accessToken: prefix + 'token?grant_type=client_credential',
+    upload: prefix + 'media/upload?'
 }
 
 function Wechat(opts) {
@@ -16,7 +19,18 @@ function Wechat(opts) {
     this.getAccessToken = opts.getAccessToken
     this.saveAccessToken = opts.saveAccessToken
 
-    this.getAccessToken()
+    this.fetchAccessToken()
+}
+
+Wechat.prototype.fetchAccessToken = function(data) { 
+    var that = this
+
+    if (this.access_token && this.expires_in) {
+        if (this.isValidAccessToken(this)) {
+            return Promise.resolve(this)
+        }
+    }
+    return this.getAccessToken()
         .then(function(data) { // 获取 access_token 后判断
             console.log(data)            
             try{
@@ -37,7 +51,7 @@ function Wechat(opts) {
             that.expires_in = data.expires_in
 
             that.saveAccessToken(data)
-            // return Promise.resolve(data)
+            return Promise.resolve(data)
         })
 }
 
@@ -74,6 +88,34 @@ Wechat.prototype.updateAccessToken = function() { // 更新、获取 access_toke
 
             resolve(data)
         }) 
+    })
+}
+
+Wechat.prototype.uploadMaterial = function(type, filepath) { 
+    var that = this
+    var form = {
+        media: fs.createReadStream(filepath)
+    }
+     
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+                var url = api.upload + '&access_token=' + data.access_token + '&type=' + type
+
+                request({method: 'POST', url: url, formData: form, json: true}).then(function(response){
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    }
+                    else {
+                        throw new Error('Upload material fails')
+                    }
+                }) 
+            })
+            .catch(function(err) {
+                reject(err)
+            })
+
+        
     })
 }
 
