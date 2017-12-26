@@ -22,7 +22,7 @@ function Wechat(opts) {
     this.fetchAccessToken()
 }
 
-Wechat.prototype.fetchAccessToken = function(data) { 
+Wechat.prototype.fetchAccessToken = function() {  // 取 access_token
     var that = this
 
     if (this.access_token && this.expires_in) {
@@ -30,6 +30,7 @@ Wechat.prototype.fetchAccessToken = function(data) {
             return Promise.resolve(this)
         }
     }
+
     return this.getAccessToken()
         .then(function(data) { // 获取 access_token 后判断
             console.log(data)            
@@ -91,22 +92,22 @@ Wechat.prototype.updateAccessToken = function() { // 更新、获取 access_toke
     })
 }
 
-Wechat.prototype.uploadMaterial = function(type, filepath) { 
+Wechat.prototype.uploadMaterial = function(type, filepath) {  // 请求上传临时素材
     var that = this
     var form = {
         media: fs.createReadStream(filepath)
     }
      
     return new Promise(function(resolve, reject) {
-        that.fetchAccessToken().then(function(data) {
+        that.fetchAccessToken()
+            .then(function(data) {
                 var url = api.upload + '&access_token=' + data.access_token + '&type=' + type
 
                 request({method: 'POST', url: url, formData: form, json: true}).then(function(response){
                     var _data = response[1]
                     if (_data) {
                         resolve(_data)
-                    }
-                    else {
+                    } else {
                         throw new Error('Upload material fails')
                     }
                 }) 
@@ -114,8 +115,6 @@ Wechat.prototype.uploadMaterial = function(type, filepath) {
             .catch(function(err) {
                 reject(err)
             })
-
-        
     })
 }
 

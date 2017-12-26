@@ -7,7 +7,7 @@ var wechatApi = new Wechat(config.wechat)
 exports.reply = function* (next) {
     var message = this.weixin
 
-    if (message.MsgType === 'event') {
+    if (message.MsgType === 'event') { // 用户触发事件
         if (message.Event === 'subscribe') {
             // 此处不知为何 搜索关注和扫二维码关注都有 EventKey 但为 ''
             if (message.EventKey) {
@@ -35,11 +35,11 @@ exports.reply = function* (next) {
         }
         
     }
-    else if (message.MsgType === 'text') {
+    else if (message.MsgType === 'text') { // 用户发来文本
         var content = message.Content
         var reply = '额，不知道你说的 “' + message.Content + '” 是什么'
 
-        if (content === '1') {
+        if (content === '1') { // 回复纯文本
             reply = '天下第一吃大米'
         }
         else if (content === '2') {
@@ -48,7 +48,7 @@ exports.reply = function* (next) {
         else if (content === '3') {
             reply = '天下第三吃仙丹'
         }
-        else if (content === '4') {
+        else if (content === '4') { // 回复图文
             reply = [
                 {
                     title: '技术改变世界',
@@ -64,7 +64,7 @@ exports.reply = function* (next) {
                 }
             ]
         }
-        else if (content === '5') {
+        else if (content === '5') { // 上传临时素材图片、回复图片
             var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg')
 
             reply = {
@@ -72,7 +72,7 @@ exports.reply = function* (next) {
                 mediaId: data.media_id
             }
         }
-        else if (content === '6') {
+        else if (content === '6') { // 上传临时素材视频、回复视频
             var data = yield wechatApi.uploadMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4')
 
             reply = {
@@ -82,7 +82,7 @@ exports.reply = function* (next) {
                 mediaId: data.media_id
             }
         }
-        else if (content === '7') {
+        else if (content === '7') { // 上传临时素材音乐封面， 回复音乐
             var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/qrcode.jpg')
 
             reply = {
