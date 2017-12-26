@@ -1,7 +1,7 @@
 # wechat
 微信公众号开发
 
-###注意：
+### 注意：
 需在项目根目录 创建 config.js 并填充appID、appSecret、token:
 
     'use strict'
@@ -27,7 +27,7 @@
     
     module.exports = config
 
-###运行：
+### 运行：
 项目根目录： 
 
     node --harmony app.js
