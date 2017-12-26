@@ -197,7 +197,7 @@ Wechat.prototype.delMaterial = function(mediaId) {
             var form = {media_id: mediaId}
             request({url: url, method: 'POST', json: true, formData: form})
                 .then(function(response) {
-                    var data = response.body
+                    var _data = response.body
                     if (_data.errcode === 0) {
                         resolve()
                     } else {
