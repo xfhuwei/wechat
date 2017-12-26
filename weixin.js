@@ -65,7 +65,7 @@ exports.reply = function* (next) {
             ]
         }
         else if (content === '5') { // 上传临时素材图片、回复图片
-            var data = yield wechatApi.uploadTempMaterial('image', __dirname + '/images/node.jpg')
+            var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg')
 
             reply = {
                 type: 'image',
@@ -73,7 +73,7 @@ exports.reply = function* (next) {
             }
         }
         else if (content === '6') { // 上传临时素材视频、回复视频
-            var data = yield wechatApi.uploadTempMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4')
+            var data = yield wechatApi.uploadMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4')
 
             reply = {
                 type: 'video',
@@ -83,7 +83,7 @@ exports.reply = function* (next) {
             }
         }
         else if (content === '7') { // 上传临时封面图、回复音乐
-            var data = yield wechatApi.uploadTempMaterial('image', __dirname + '/images/qrcode.jpg')
+            var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/qrcode.jpg')
 
             reply = {
                 type: 'music',
@@ -92,6 +92,100 @@ exports.reply = function* (next) {
                 musicUrl: 'http://sc1.111ttt.cn:8282/2017/1/11m/11/304112004168.m4a?tflag=1514212204&pin=2cf66dc5253c300f04a9bf75a900bdd7#.mp3',
                 thumbMediaId: data.media_id
             }
+        }
+        else if (content === '8') { // 上传 永久素材需要 认证权限
+            var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg', {type: 'image'})
+
+            reply = {
+                type: 'image',
+                mediaId: data.media_id
+            }
+        }
+        else if (content === '9') { // 上传 永久素材需要 认证权限
+            var data = yield wechatApi.uploadMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4', {type: 'video', description: '{"title": "Really a nice place", "introduction": " Never think is so easy"}'})
+
+            reply = {
+                type: 'video',
+                title: '回复视频',
+                description: '回复视频的描述',
+                mediaId: data.media_id
+            }
+        }
+        else if (content === '10') { // 上传 永久素材需要 认证权限
+            var pciData = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg', {})
+
+            var media = {
+                articles: [
+                    {
+                        title: 'tututu',
+                        thumb_media_id: pciData.media_id,
+                        author: 'huwei',
+                        digest: '没有摘要',
+                        show_cover_pic: 1,
+                        content: '没有内容',
+                        content_source_url: 'https://github.com'
+                    },
+                    {
+                        title: 'tututu2',
+                        thumb_media_id: pciData.media_id,
+                        author: 'huwei',
+                        digest: '没有摘要',
+                        show_cover_pic: 1,
+                        content: '没有内容',
+                        content_source_url: 'https://github.com'
+                    }
+                ]
+            }
+
+            data = yield wechatApi.uploadMaterial('news', media, {})
+            data = yield wechatApi.fetchMaterial(data.media_id, 'news', {})
+
+            console.log(data)
+
+            var items = data.news_item
+            var news = []
+
+            items.forEach(function(item) {
+                news.push({
+                    title: item.title,
+                    description: item.digest,
+                    picUrl: pciData.url,
+                    url: item.url
+                })
+            })
+
+            reply = news
+        }
+        else if (content === '11') { // 上传 永久素材需要 认证权限
+            var counts = yield wechatApi.countMaterial()
+
+            console.log(JSON.stringify(counts))
+
+            var results = yield [
+                wechatApi.batchMaterial({
+                    type: 'image',
+                    offset: 0,
+                    count: 10
+                }),
+                wechatApi.batchMaterial({
+                    type: 'video',
+                    offset: 0,
+                    count: 10
+                }),
+                wechatApi.batchMaterial({
+                    type: 'voice',
+                    offset: 0,
+                    count: 10
+                }),
+                wechatApi.batchMaterial({
+                    type: 'news',
+                    offset: 0,
+                    count: 10
+                })
+            ]
+            console.log(JSON.stringify(results));
+
+            reply = '1'
         }
 
         this.body = reply;

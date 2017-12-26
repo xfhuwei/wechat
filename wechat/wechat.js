@@ -1,6 +1,7 @@
 'use strict'
 // bluebird。 Promise是异步代码 实现控制流 的一种方式。 使代码干净、可读、健壮
 var Promise = require('bluebird') 
+var _ = require('lodash')
 // request模块让http请求变的更加简单。(作为客户端，去请求、抓取另一个网站的信息) 
 var request = Promise.promisify(require('request')) 
 var util = require('./util')
@@ -9,13 +10,20 @@ var fs = require('fs')
 var prefix = 'https://api.weixin.qq.com/cgi-bin/'
 var api = {
     accessToken: prefix + 'token?grant_type=client_credential',
-    upload: prefix + 'media/upload?',
-    uploadPermPic: prefix + 'media/uploadimg?',
-    uploadPermOrther: prefix + 'material/add_material?',
-    uploadPermNews: prefix + 'material/add_news?',
-    getTempMaterial: prefix + 'media/get?',
-    getPermMaterial: prefix + 'material/get_material?',
-    delPermMaterial: prefix + 'material/del_material'
+    temporary: {
+        upload: prefix + 'media/upload?', 
+        fetch: prefix + 'media/get?'
+    },
+    permanent: {
+        upload: prefix + 'material/add_material?',
+        fetch: prefix + 'material/get_material?',
+        uploadNews: prefix + 'material/add_news?',
+        uploadNewsPic: prefix + 'media/uploadimg?',
+        del: prefix + 'material/del_material',
+        update: prefix + 'material/update_news?',
+        count: prefix + 'material/get_materialcount?',
+        batch: prefix + 'material/batchget_material?',
+    }
 }
 
 function Wechat(opts) {
@@ -102,19 +110,53 @@ Wechat.prototype.updateAccessToken = function() {
 }
 
 // 请求上传临时素材
-Wechat.prototype.uploadTempMaterial = function(type, filepath) {  
+Wechat.prototype.uploadMaterial = function(type, material, permanent) {  
     var that = this
-    var form = {
-        media: fs.createReadStream(filepath)
+    var form = {}
+    var uploadUrl = api.temporary.upload
+
+    if (permanent) {
+        uploadUrl = api.permanent.upload
+        _.extend(form, permanent)
     }
+    if (type === 'pic') {
+        uploadUrl = api.permanent.uploadNewsPic
+    }
+    if (type === 'news') {
+        uploadUrl = api.permanent.uploadNews
+        form = material
+    } else {
+        form.media =  fs.createReadStream(material)
+    }
+
      
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken()
             .then(function(data) {
-                var url = api.upload + '&access_token=' + data.access_token + '&type=' + type
+                var url = uploadUrl + '&access_token=' + data.access_token
 
-                request({method: 'POST', url: url, formData: form, json: true}).then(function(response){
+                if (!permanent) {
+                    url += '&type=' + type
+                } else {
+                    form.access_token = data.access_token
+                }
+
+                var options = {
+                    method: 'POST',
+                    url: url,
+                    json: true
+                }
+
+                if (type === 'news') {
+                    options.body = form
+                } else {
+                    options.formData = form
+                }
+
+                request(options).then(function(response){
                     var _data = response[1]
+                    // console.log(response.body)
+                    // console.log(response[1])
                     if (_data) {
                         resolve(_data)
                     } else {
@@ -128,78 +170,67 @@ Wechat.prototype.uploadTempMaterial = function(type, filepath) {
     })
 }
 
-// 请求上传永久素材 ****改
-Wechat.prototype.uploadPermMaterial = function(type, filepath) {
+// 获取素材链接
+Wechat.prototype.fetchMaterial = function(mediaId, type, permanent){
     var that = this
-    var form = {}
-    var uploadUrl = ''
+    var fetchUrl = api.temporary.fetch
 
-    if (type === 'pic') {
-        uploadUrl = api.uploadPermPic
-    } 
-    if (type === 'other') {
-        uploadUrl = api.uploadPermOther
-    } 
-    if (type === 'news') {
-        uploadUrl = api.uploadPermNews
-        form = filepath
-    } else {
-        form.media = fs.createReadStream(filepath)
+    if (permanent) {
+        fetchUrl = api.permanent.fetch
     }
 
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken()
             .then(function(data) {
-                var url = uploadUrl + 'access_token=' + data.access_token
-                var opts = {
-                    method: 'POST',
-                    url: url,
-                    json: true
-                }
-                if (type == 'news') {
-                    opts.body = form
+                var url = fetchUrl + '&access_token=' + data.access_token + '&media_id=' + mediaId
+ 
+                var form = {}
+                var options = {url: url, method: 'POST', json: true}
+               if (permanent) {
+                    form.media_id = mediaId,
+                    form.access_token = data.access_token
+                    options.body = form
                 } else {
-                    opts.formData = form
-                }
-                request(opts).then(function(response) {
-                    var _data = response.body
-                    if (_data) {
-                        resolve(_data)
-                    } else {
-                        throw new Error('upload permanent material failed!')
+                    if (type === 'video') {
+                        url = url.replace('https://', 'http://') 
                     }
-                }).catch(function(err){
-                    reject(err)
-                })
+                    url += '&media_id=' + mediaId
+                }
+
+                if (type === 'news' || type === 'video') {
+                    request(options)
+                        .then(function(response) {
+                            var _data = response[1]
+                            if (_data) {
+                                resolve(_data)
+                            } else {
+                                throw new Error('fetch permanent material failed!')
+                            }
+                        })
+                        .catch(function(err) {
+                            reject(err)
+                        })
+                } else {
+                    resolve(url)
+                }
             })
+        
     })
 }
 
-// 获取素材链接
-Wechat.prototype.getMaterial = function(mediaId, permanent){
-    var that = this;
-    var getUrl = permanent ? api.getPermMaterial : api.getTempMaterial;
-    return new Promise(function(resolve,reject){
-        that.fetchAccessToken().then(function(data){
-            var url = getUrl + 'access_token=' + data.access_token;
-            if(!permanent) url += '&media_id=' + mediaId;
-            resolve(url)
-        });
-    });
-}
-
 // 删除永久素材
-Wechat.prototype.delMaterial = function(mediaId) {
+Wechat.prototype.deleteMaterial = function(mediaId) {
     var that = this
+    var form = {media_id: mediaId}
+    
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken().then(function(data) {
-            var url = api.delPermMaterial + 'access_token=' + data.access_token
-            var form = {media_id: mediaId}
-            request({url: url, method: 'POST', json: true, formData: form})
+            var url = api.permanent.del + 'access_token=' + data.access_token + '&media_id=' + mediaId
+            request({url: url, method: 'POST', json: true, body: form})
                 .then(function(response) {
-                    var _data = response.body
-                    if (_data.errcode === 0) {
-                        resolve()
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
                     } else {
                         throw new Error('delete permanent material failed!')
                     }
@@ -211,7 +242,81 @@ Wechat.prototype.delMaterial = function(mediaId) {
     })
 }
 
-// 修改永久素材、获取素材总数、获取素材列表 等未一一实现
+// 更新永久素材
+Wechat.prototype.updateMaterial = function(mediaId, news) {
+    var that = this
+    var form = {media_id: mediaId}
+
+    _.extend(form, news)
+    
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.permanent.update + 'access_token=' + data.access_token + '&media_id=' + mediaId
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('update permanent material failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+// 获取素材总数
+Wechat.prototype.countMaterial = function() {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.permanent.count + 'access_token=' + data.access_token 
+            request({url: url, method: 'GET', json: true})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('count permanent material failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+// 获取素材列表
+Wechat.prototype.batchMaterial = function(options) {
+    var that = this
+
+    options.type = options.type || 'image'
+    options.offset = options.offset || 0
+    options.conut = options.count || 1
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.permanent.batch + 'access_token=' + data.access_token 
+            request({url: url, method: 'POST', body: options, json: true})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('batch permanent material failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
 
 
 // 响应微信
