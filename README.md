@@ -30,4 +30,11 @@
 ### 运行：
 项目根目录： 
 
-    node --harmony app.js
+    node --harmony app.js  
+    
+   或     
+        
+    node app.js
+    
+   --harmony 
+（和谐模式启动）只是让node启用具备一些超前功能的模块，可省略。
