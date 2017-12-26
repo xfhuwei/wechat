@@ -82,7 +82,7 @@ exports.reply = function* (next) {
                 mediaId: data.media_id
             }
         }
-        else if (content === '7') { // 上传临时素材音乐封面， 回复音乐
+        else if (content === '7') { // 上传临时封面图、回复音乐
             var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/qrcode.jpg')
 
             reply = {

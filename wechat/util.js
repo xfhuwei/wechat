@@ -48,17 +48,17 @@ function formatMessage(result) { // 格式化 结果对象
 
 exports.formatMessage = formatMessage
 
-exports.tpl = function(content, message) {
+exports.tpl = function(content, message) { // 整理回复信息
     var info = {}
     var type = 'text'
     var fromUserName = message.FromUserName
     var toUserName = message.ToUserName
 
-    if (Array.isArray(content)) {
+    if (Array.isArray(content)) { // 如果回复内容为数组， 这回复类型为图文模式
         type = 'news'
     }
-
     type = content.type || type
+
     info.content = content
     info.createTime = new Date().getTime()
     info.msgType = type
