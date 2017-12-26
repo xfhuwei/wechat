@@ -26,4 +26,7 @@ var config = {
 }
 
 module.exports = config
+
+###运行：
+项目根目录： node --harmony app.js
 `
