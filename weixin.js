@@ -65,7 +65,7 @@ exports.reply = function* (next) {
             ]
         }
         else if (content === '5') { // 上传临时素材图片、回复图片
-            var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg')
+            var data = yield wechatApi.uploadTempMaterial('image', __dirname + '/images/node.jpg')
 
             reply = {
                 type: 'image',
@@ -73,7 +73,7 @@ exports.reply = function* (next) {
             }
         }
         else if (content === '6') { // 上传临时素材视频、回复视频
-            var data = yield wechatApi.uploadMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4')
+            var data = yield wechatApi.uploadTempMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4')
 
             reply = {
                 type: 'video',
@@ -83,7 +83,7 @@ exports.reply = function* (next) {
             }
         }
         else if (content === '7') { // 上传临时封面图、回复音乐
-            var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/qrcode.jpg')
+            var data = yield wechatApi.uploadTempMaterial('image', __dirname + '/images/qrcode.jpg')
 
             reply = {
                 type: 'music',
