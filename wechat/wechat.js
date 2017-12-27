@@ -11,11 +11,11 @@ var fs = require('fs')
 var prefix = 'https://api.weixin.qq.com/cgi-bin/'
 var api = {
     accessToken: prefix + 'token?grant_type=client_credential',
-    temporary: {
+    temporary: { // 临时素材
         upload: prefix + 'media/upload?', 
         fetch: prefix + 'media/get?'
     },
-    permanent: {
+    permanent: { // 永久素材
         upload: prefix + 'material/add_material?',
         fetch: prefix + 'material/get_material?',
         uploadNews: prefix + 'material/add_news?',
@@ -24,6 +24,26 @@ var api = {
         update: prefix + 'material/update_news?',
         count: prefix + 'material/get_materialcount?',
         batch: prefix + 'material/batchget_material?',
+    },
+    user: { // 用户管理相关
+        tags: {
+            create: prefix + 'tags/create?',
+            get: prefix + 'tags/get?',
+            update: prefix + 'tags/update?',
+            del: prefix + 'tags/delete?',
+            getUser: prefix + 'user/tag/get?',
+            userSet: prefix + 'tags/members/batchtagging?',
+            userRemove: prefix + 'tags/members/batchuntagging?',
+            getUserTags: prefix + 'tags/getidlist?'
+        },
+        remark: prefix + 'user/info/updateremark?',
+        info: prefix + 'user/info?',   // access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN
+        list: prefix + 'user/get?',    // access_token=ACCESS_TOKEN&next_openid=NEXT_OPENID
+        back:{
+            list: prefix + 'tags/members/getblacklist?',
+            set: prefix + 'tags/members/batchblacklist?',
+            setCancel: prefix + 'tags/members/batchunblacklist?',
+        }
     }
 }
 
@@ -110,6 +130,8 @@ Wechat.prototype.updateAccessToken = function() {
     })
 }
 
+
+/****** 素材管理相关 ******/
 // 请求上传 临时/永久 素材
 Wechat.prototype.uploadMaterial = function(type, material, permanent) {  
     var that = this
@@ -310,6 +332,34 @@ Wechat.prototype.batchMaterial = function(options) {
 }
 
 
+/****** 用户管理相关 ******/
+// 创建标签
+Wechat.prototype.createTags = function(tags) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.user.tags.create + 'access_token=' + data.access_token 
+            var form = tags
+            request({url: url, method: 'GET', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('Create tags failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+
+
+/******* 回答 *******/
 // 响应微信
 Wechat.prototype.reply = function() {
     var content = this.body

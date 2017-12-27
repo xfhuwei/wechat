@@ -187,6 +187,10 @@ exports.reply = function* (next) {
 
             reply = '已执行获取永久素材 总数量、列表 函数'
         }
+        else if (content === '12') {
+            var tags = yield wechatApi.createTags({"tag": { "name": "标签名"}})
+            console.log(JSON.stringify(tags))
+        }
 
         this.body = reply;
     }
