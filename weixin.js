@@ -93,7 +93,7 @@ exports.reply = function* (next) {
                 thumbMediaId: data.media_id
             }
         }
-        else if (content === '8') { // 上传 永久素材需要 认证权限
+        else if (content === '8') { // 上传 永久素材（需要认证权限） 回复图片
             var data = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg', {type: 'image'})
 
             reply = {
@@ -101,7 +101,7 @@ exports.reply = function* (next) {
                 mediaId: data.media_id
             }
         }
-        else if (content === '9') { // 上传 永久素材需要 认证权限
+        else if (content === '9') { // 上传 永久素材（需要认证权限） 回复视频
             var data = yield wechatApi.uploadMaterial('video', __dirname + '/images/wx_camera_1514090846138.mp4', {type: 'video', description: '{"title": "Really a nice place", "introduction": " Never think is so easy"}'})
 
             reply = {
@@ -111,7 +111,7 @@ exports.reply = function* (next) {
                 mediaId: data.media_id
             }
         }
-        else if (content === '10') { // 上传 永久素材需要 认证权限
+        else if (content === '10') { // 上传临时素材、获取临时素材、回复图文列表
             var pciData = yield wechatApi.uploadMaterial('image', __dirname + '/images/node.jpg', {})
 
             var media = {
@@ -156,13 +156,13 @@ exports.reply = function* (next) {
 
             reply = news
         }
-        else if (content === '11') { // 上传 永久素材需要 认证权限
-            var counts = yield wechatApi.countMaterial()
+        else if (content === '11') { 
+            var counts = yield wechatApi.countMaterial() // 获取 永久素材 总数量
 
             console.log(JSON.stringify(counts))
 
             var results = yield [
-                wechatApi.batchMaterial({
+                wechatApi.batchMaterial({ // 获取 永久素材 列表
                     type: 'image',
                     offset: 0,
                     count: 10
@@ -185,7 +185,7 @@ exports.reply = function* (next) {
             ]
             console.log(JSON.stringify(results));
 
-            reply = '1'
+            reply = '已执行获取永久素材 总数量、列表 函数'
         }
 
         this.body = reply;

@@ -1,6 +1,7 @@
 'use strict'
 // bluebird。 Promise是异步代码 实现控制流 的一种方式。 使代码干净、可读、健壮
 var Promise = require('bluebird') 
+// Lodash 就是一套工具库，它内部封装了诸多对字符串、数组、对象等常见数据类型的处理函数
 var _ = require('lodash')
 // request模块让http请求变的更加简单。(作为客户端，去请求、抓取另一个网站的信息) 
 var request = Promise.promisify(require('request')) 
@@ -19,7 +20,7 @@ var api = {
         fetch: prefix + 'material/get_material?',
         uploadNews: prefix + 'material/add_news?',
         uploadNewsPic: prefix + 'media/uploadimg?',
-        del: prefix + 'material/del_material',
+        del: prefix + 'material/del_material?',
         update: prefix + 'material/update_news?',
         count: prefix + 'material/get_materialcount?',
         batch: prefix + 'material/batchget_material?',
@@ -109,17 +110,17 @@ Wechat.prototype.updateAccessToken = function() {
     })
 }
 
-// 请求上传临时素材
+// 请求上传 临时/永久 素材
 Wechat.prototype.uploadMaterial = function(type, material, permanent) {  
     var that = this
     var form = {}
-    var uploadUrl = api.temporary.upload
+    var uploadUrl = api.temporary.upload  // 默认上传临时
 
-    if (permanent) {
-        uploadUrl = api.permanent.upload
-        _.extend(form, permanent)
+    if (permanent) {  // 如果有此参数则为 上传永久
+        uploadUrl = api.permanent.upload 
+        _.extend(form, permanent)  // 将 permanent 合并到 permanent
     }
-    if (type === 'pic') {
+    if (type === 'pic') { 
         uploadUrl = api.permanent.uploadNewsPic
     }
     if (type === 'news') {
@@ -129,99 +130,89 @@ Wechat.prototype.uploadMaterial = function(type, material, permanent) {
         form.media =  fs.createReadStream(material)
     }
 
-     
     return new Promise(function(resolve, reject) {
-        that.fetchAccessToken()
-            .then(function(data) {
-                var url = uploadUrl + '&access_token=' + data.access_token
+        that.fetchAccessToken().then(function(data) {
+            var url = uploadUrl + 'access_token=' + data.access_token
+            if (!permanent) {
+                url += '&type=' + type
+            } else {
+                form.access_token = data.access_token
+            }
 
-                if (!permanent) {
-                    url += '&type=' + type
+            var options = {
+                method: 'POST',
+                url: url,
+                json: true
+            }
+
+            if (type === 'news') {
+                options.body = form
+            } else {
+                options.formData = form
+            }
+
+            request(options).then(function(response){
+                var _data = response[1]
+                if (_data) {
+                    resolve(_data)
                 } else {
-                    form.access_token = data.access_token
+                    throw new Error('Upload material fails')
                 }
-
-                var options = {
-                    method: 'POST',
-                    url: url,
-                    json: true
-                }
-
-                if (type === 'news') {
-                    options.body = form
-                } else {
-                    options.formData = form
-                }
-
-                request(options).then(function(response){
-                    var _data = response[1]
-                    // console.log(response.body)
-                    // console.log(response[1])
-                    if (_data) {
-                        resolve(_data)
-                    } else {
-                        throw new Error('Upload material fails')
-                    }
-                }) 
-            })
-            .catch(function(err) {
+            }).catch(function(err) {
                 reject(err)
-            })
+            })  
+        })
     })
 }
 
-// 获取素材链接
+// 获取 （临时、永久）素材
 Wechat.prototype.fetchMaterial = function(mediaId, type, permanent){
     var that = this
-    var fetchUrl = api.temporary.fetch
+    var fetchUrl = api.temporary.fetch  // 默认临时
 
     if (permanent) {
         fetchUrl = api.permanent.fetch
     }
 
     return new Promise(function(resolve, reject) {
-        that.fetchAccessToken()
-            .then(function(data) {
-                var url = fetchUrl + '&access_token=' + data.access_token + '&media_id=' + mediaId
- 
-                var form = {}
-                var options = {url: url, method: 'POST', json: true}
-               if (permanent) {
-                    form.media_id = mediaId,
-                    form.access_token = data.access_token
-                    options.body = form
-                } else {
-                    if (type === 'video') {
-                        url = url.replace('https://', 'http://') 
-                    }
-                    url += '&media_id=' + mediaId
+        that.fetchAccessToken().then(function(data) {
+            var url = fetchUrl + 'access_token=' + data.access_token + '&media_id=' + mediaId
+            var form = {}
+            var options = {url: url, method: 'POST', json: true}
+            if (permanent) {
+                form.media_id = mediaId,
+                form.access_token = data.access_token
+                options.body = form
+            } else {
+                if (type === 'video') { // video 不支持https
+                    url = url.replace('https://', 'http://') 
                 }
+                url += '&media_id=' + mediaId
+            }
 
-                if (type === 'news' || type === 'video') {
-                    request(options)
-                        .then(function(response) {
-                            var _data = response[1]
-                            if (_data) {
-                                resolve(_data)
-                            } else {
-                                throw new Error('fetch permanent material failed!')
-                            }
-                        })
-                        .catch(function(err) {
-                            reject(err)
-                        })
-                } else {
-                    resolve(url)
-                }
-            })
-        
+            if (type === 'news' || type === 'video') { // 若是图文列表或视频 需请求获取
+                request(options).then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('fetch permanent material failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+            } else {
+                resolve(url)
+            }    
+        })
     })
 }
 
-// 删除永久素材
+// 删除永久素材 
 Wechat.prototype.deleteMaterial = function(mediaId) {
     var that = this
-    var form = {media_id: mediaId}
+    var form = {media_id: mediaId} // 删除永久素材只需 media_id
     
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken().then(function(data) {
@@ -247,7 +238,7 @@ Wechat.prototype.updateMaterial = function(mediaId, news) {
     var that = this
     var form = {media_id: mediaId}
 
-    _.extend(form, news)
+    _.extend(form, news) // 合并
     
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken().then(function(data) {
@@ -295,9 +286,9 @@ Wechat.prototype.countMaterial = function() {
 Wechat.prototype.batchMaterial = function(options) {
     var that = this
 
-    options.type = options.type || 'image'
-    options.offset = options.offset || 0
-    options.conut = options.count || 1
+    options.type = options.type || 'image'  // 需获取的类型
+    options.offset = options.offset || 0    // 偏移量，即从第几个开始获取
+    options.conut = options.count || 1      // 需获取的数量
 
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken().then(function(data) {
