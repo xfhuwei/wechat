@@ -188,8 +188,66 @@ exports.reply = function* (next) {
             reply = '已执行获取永久素材 总数量、列表 函数'
         }
         else if (content === '12') {
-            var tags = yield wechatApi.createTags({"tag": { "name": "标签名"}})
-            console.log(JSON.stringify(tags))
+            // var group = yield wechatApi.createGroup('wechat3')
+            // console.log('新分组 wechat3')
+            // console.log(group)
+
+            // var groups = yield wechatApi.fetchGroup()
+            // console.log('加了 wechat3 后的分组列表')
+            // console.log(groups)
+
+            // var group2 = yield wechatApi.checkGroup(message.FromUserName)
+            // console.log('查看自己的分组')
+            // console.log(group2)
+
+            // var result = yield wechatApi.batchMoveGroup(message.FromUserName, 100)
+            // console.log('移动到 100')
+            // console.log(result)
+
+            // var groups2 = yield wechatApi.fetchGroup()
+            // console.log('移动后的分组列表')
+            // console.log(groups2)
+
+            // var result2 = yield wechatApi.batchMoveGroup([message.FromUserName], 101)
+            // console.log('移动到 101')
+            // console.log(result2)
+
+            // var groups3 = yield wechatApi.fetchGroup()
+            // console.log('批量移动后的分组列表')
+            // console.log(groups3)
+
+            // var result3 = yield wechatApi.updateGroup(100, 'wechat100')
+            // console.log('100 wechat 改名为 wechat100')
+            // console.log(result3)
+
+            // var groups4 = yield wechatApi.fetchGroup()
+            // console.log('改名后的分组列表')
+            // console.log(groups4)
+
+            // var result4 = yield wechatApi.deleteGroup(100)
+            // console.log('删除 100 wechat100分组')
+            // console.log(result4)
+
+            // var groups5 = yield wechatApi.fetchGroup()
+            // console.log('删除 100 后的分组列表')
+            // console.log(groups5)
+
+            reply = '分组api测试，需解开注释'
+        }
+        else if (content === '13') {
+            var user = yield wechatApi.fetchUsers(message.FromUserName, 'zh_CN')
+            console.log(user)
+
+            var openIds = [
+                {
+                    openid: message.FromUserName,
+                    lang: 'en'
+                }
+            ]
+            var users = yield wechatApi.fetchUsers(openIds)
+            console.log(users)
+
+            reply = JSON.stringify(user)
         }
 
         this.body = reply;

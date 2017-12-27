@@ -25,7 +25,22 @@ var api = {
         count: prefix + 'material/get_materialcount?',
         batch: prefix + 'material/batchget_material?',
     },
-    user: { // 用户管理相关
+    group: {
+        create: prefix + 'groups/create?',
+        fetch: prefix + 'groups/get?',
+        check: prefix + 'groups/getid?',
+        update: prefix + 'groups/update?',
+        move: prefix + 'groups/members/update?',
+        batchupdate: prefix + 'groups/members/batchupdate?',
+        del: prefix + 'groups/delete?',
+
+    },
+    user: {
+        remark: prefix + 'user/info/updateremark?', // 此接口暂时开放给微信认证的服务号
+        fetch: prefix + 'user/info?',
+        batchFetch: prefix + 'user/info/batchget?',
+    }
+    /* user: { // 用户管理相关
         tags: {
             create: prefix + 'tags/create?',
             get: prefix + 'tags/get?',
@@ -44,7 +59,7 @@ var api = {
             set: prefix + 'tags/members/batchblacklist?',
             setCancel: prefix + 'tags/members/batchunblacklist?',
         }
-    }
+    } */
 }
 
 function Wechat(opts) {
@@ -333,21 +348,166 @@ Wechat.prototype.batchMaterial = function(options) {
 
 
 /****** 用户管理相关 ******/
-// 创建标签
-Wechat.prototype.createTags = function(tags) {
+// 创建分组标签
+Wechat.prototype.createGroup = function(name) {
     var that = this
 
     return new Promise(function(resolve, reject) {
         that.fetchAccessToken().then(function(data) {
-            var url = api.user.tags.create + 'access_token=' + data.access_token 
-            var form = tags
-            request({url: url, method: 'GET', json: true, body: form})
+            var url = api.group.create + 'access_token=' + data.access_token 
+            var form = {
+                group: {
+                    name: name
+                }
+            }
+            request({url: url, method: 'POST', json: true, body: form})
                 .then(function(response) {
                     var _data = response[1]
                     if (_data) {
                         resolve(_data)
                     } else {
-                        throw new Error('Create tags failed!')
+                        throw new Error('Create group failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+Wechat.prototype.fetchGroup = function() {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.group.fetch + 'access_token=' + data.access_token 
+            
+            request({url: url, method: 'GET', json: true})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('fetch group failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+Wechat.prototype.checkGroup = function(openid) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.group.check + 'access_token=' + data.access_token 
+            var form = {
+                openid: openid
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('check group failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+Wechat.prototype.updateGroup = function(id, name) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.group.update + 'access_token=' + data.access_token 
+            var form = {
+                group: {
+                    id: id,
+                    name: name
+                }
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('update group failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+Wechat.prototype.batchMoveGroup = function(openids, to) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            if (_.isArray(openids)) {
+                var url = api.group.batchupdate + 'access_token=' + data.access_token 
+                var form = {
+                    openid_list: openids,
+                    to_groupid: to
+                }
+            } else {
+                var url = api.group.move + 'access_token=' + data.access_token 
+                var form = {
+                    openid: openids,
+                    to_groupid: to
+                }
+            }
+            
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('batchMove group failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+Wechat.prototype.deleteGroup = function(id) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.group.del + 'access_token=' + data.access_token 
+            var form = {
+                group: {
+                    id: id 
+                }
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('delete group failed!')
                     }
                 })
                 .catch(function(err) {
