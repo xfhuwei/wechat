@@ -28,6 +28,9 @@
     module.exports = config
 
 ### 运行：
+安装依赖：
+    npm install 
+    
 项目根目录： 
 
     node --harmony app.js  
