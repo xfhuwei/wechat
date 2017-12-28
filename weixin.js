@@ -39,15 +39,17 @@ exports.reply = function* (next) {
     else if (message.MsgType === 'text') { // 用户发来文本
         var content = message.Content
         var reply = '额，不知道你说的 “' + message.Content + '” 是什么'
-
-        if (content === '1') { // 回复纯文本
-            reply = '天下第一吃大米'
+        if (content === '0') { // 回复纯文本
+            reply = '孤标婉韵两堪夸，独傲严霜展芳华'
+        }
+        if (content === '1') {
+            reply = '素影一痕香若许，巧笛三弄是谁家'
         }
         else if (content === '2') {
-            reply = '天下第二吃豆腐'
+            reply = '冰增气味云添苔，雪欠精神玉有瑕'
         }
         else if (content === '3') {
-            reply = '天下第三吃仙丹'
+            reply = '我不冲寒先破蕾，众香哪个敢生花'
         }
         else if (content === '4') { // 回复图文
             reply = [
