@@ -33,12 +33,18 @@ var api = {
         move: prefix + 'groups/members/update?',
         batchupdate: prefix + 'groups/members/batchupdate?',
         del: prefix + 'groups/delete?',
-
     },
     user: {
-        remark: prefix + 'user/info/updateremark?', // 此接口暂时开放给微信认证的服务号
-        fetch: prefix + 'user/info?',
-        batchFetch: prefix + 'user/info/batchget?',
+        remark: prefix + 'user/info/updateremark?', // 用户备注名、此接口暂时开放给微信认证的服务号
+        fetch: prefix + 'user/info?',                 // 查询单个用户信息
+        batchFetch: prefix + 'user/info/batchget?', // 批量查询用户信息
+        list:  prefix + 'user/get?',
+        // 拉黑
+        back:{
+            list: prefix + 'tags/members/getblacklist?', // post {"begin_openid":"OPENID1"}
+            set: prefix + 'tags/members/batchblacklist?', // post{"openid_list":["OPENID1”,” OPENID2”]}
+            cancel: prefix + 'tags/members/batchunblacklist?',// post{"openid_list":["OPENID1”,” OPENID2”]}
+        }
     }
     /* user: { // 用户管理相关
         tags: {
@@ -348,7 +354,7 @@ Wechat.prototype.batchMaterial = function(options) {
 
 
 /****** 用户管理相关 ******/
-// 创建分组标签
+// 创建新分组
 Wechat.prototype.createGroup = function(name) {
     var that = this
 
@@ -376,6 +382,7 @@ Wechat.prototype.createGroup = function(name) {
     })
 }
 
+// 获取分组列表
 Wechat.prototype.fetchGroup = function() {
     var that = this
 
@@ -399,6 +406,7 @@ Wechat.prototype.fetchGroup = function() {
     })
 }
 
+// 查看id所在的当前分组
 Wechat.prototype.checkGroup = function(openid) {
     var that = this
 
@@ -425,6 +433,7 @@ Wechat.prototype.checkGroup = function(openid) {
     })
 }
 
+// 修改分组名
 Wechat.prototype.updateGroup = function(id, name) {
     var that = this
 
@@ -454,7 +463,8 @@ Wechat.prototype.updateGroup = function(id, name) {
     })
 }
 
-Wechat.prototype.batchMoveGroup = function(openids, to) {
+// 单个或批量移动至指定分组
+Wechat.prototype.moveGroup = function(openids, to) {
     var that = this
 
     return new Promise(function(resolve, reject) {
@@ -489,6 +499,7 @@ Wechat.prototype.batchMoveGroup = function(openids, to) {
     })
 }
 
+// 删除指定分组
 Wechat.prototype.deleteGroup = function(id) {
     var that = this
 
@@ -517,6 +528,197 @@ Wechat.prototype.deleteGroup = function(id) {
     })
 }
 
+// 设置用户备注名（此接口暂时只开放给微信认证的服务号） （未测试）
+Wechat.prototype.remarkUser = function(openid, remark) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.user.remark + 'access_token=' + data.access_token
+            var form = {
+                openid: openid,
+                remark: remark
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('Remark user failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+// 单个或多个获取用户信息
+Wechat.prototype.fetchUsers = function(openids, lang) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+
+            var options = {
+                json: true
+            }
+            lang = lang || 'zh_CN' // 设置默认语言
+
+            if (_.isArray(openids)) {  // 多个获取
+                options.method = 'POST'
+                options.url = api.group.batchFetch + 'access_token=' + data.access_token
+                openids.forEach(function(item, index) {
+                    openids[index].lang = item.lang || lang  // 设置默认语言
+                })
+                options.body = {
+                    openid_list: openids
+                }
+
+            } else { // 单个获取
+                options.method = 'GET'
+                options.url = api.group.fetch + 'access_token=' + data.access_token + '&openid=' + openids + '&lang=' + lang
+            }
+
+            request(options)
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('Fetch Users failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+// 获取用户列表
+Wechat.prototype.listUser = function(next) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.user.list + 'access_token=' + data.access_token
+            if (next) {
+                url += '&next_openid=' + next
+            }
+
+            request({url: url, method: 'GET', json: true})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('Get user list failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+
+// 获取黑名单列表
+Wechat.prototype.fetchBackUsers = function(begin) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.user.back.list + 'access_token=' + data.access_token
+            var form = {
+                begin_openid: ''
+            }
+            if (begin) {
+                form.begin_openid = begin
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('Get back user list failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+// 拉黑用户
+Wechat.prototype.setBackUsers = function(openids) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.user.back.set + 'access_token=' + data.access_token
+            if(_.isArray(openids)) {
+                var form = {
+                    openid_list: openids // openids 应该为一个数组
+                }
+            } else {
+                var form = {
+                    openid_list: [openids]
+                }
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('Set back users failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
+// 取消拉黑用户
+Wechat.prototype.cancelBackUsers = function(openids) {
+    var that = this
+
+    return new Promise(function(resolve, reject) {
+        that.fetchAccessToken().then(function(data) {
+            var url = api.user.back.cancel + 'access_token=' + data.access_token
+            if(_.isArray(openids)) {
+                var form = {
+                    openid_list: openids // openids 应该为一个数组
+                }
+            } else {
+                var form = {
+                    openid_list: [openids]
+                }
+            }
+
+            request({url: url, method: 'POST', json: true, body: form})
+                .then(function(response) {
+                    var _data = response[1]
+                    if (_data) {
+                        resolve(_data)
+                    } else {
+                        throw new Error('cancel back users failed!')
+                    }
+                })
+                .catch(function(err) {
+                    reject(err)
+                })
+        })
+    })
+}
 
 
 /******* 回答 *******/

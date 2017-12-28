@@ -21,6 +21,7 @@ exports.reply = function* (next) {
             this.body = ''
         }
         else if (message.Event === 'LOCATION') {
+            // 用户同意上报地理位置后，每次进入公众号会话时，都会在进入时上报地理位置，上报地理位置以推送XML数据包到开发者填写的URL来实现。
             this.body = '您上报的位置是：' + message.Latitude + '/' + message.Longitude + '-' + message.Precision
         }
         else if (message.Event === 'CLICK') {
@@ -200,7 +201,7 @@ exports.reply = function* (next) {
             // console.log('查看自己的分组')
             // console.log(group2)
 
-            // var result = yield wechatApi.batchMoveGroup(message.FromUserName, 100)
+            // var result = yield wechatApi.moveGroup(message.FromUserName, 100)
             // console.log('移动到 100')
             // console.log(result)
 
@@ -208,7 +209,7 @@ exports.reply = function* (next) {
             // console.log('移动后的分组列表')
             // console.log(groups2)
 
-            // var result2 = yield wechatApi.batchMoveGroup([message.FromUserName], 101)
+            // var result2 = yield wechatApi.moveGroup([message.FromUserName], 101)
             // console.log('移动到 101')
             // console.log(result2)
 
@@ -235,7 +236,11 @@ exports.reply = function* (next) {
             reply = '分组api测试，需解开注释'
         }
         else if (content === '13') {
-            var user = yield wechatApi.fetchUsers(message.FromUserName, 'zh_CN')
+
+            // var result = yield wechatApi.fetchUsers(message.FromUserName, '鲁班一号') // 设置备注
+            // console.log(result)
+
+            var user = yield wechatApi.fetchUsers(message.FromUserName, 'zh_CN') // 获取单个用户信息
             console.log(user)
 
             var openIds = [
@@ -244,11 +249,20 @@ exports.reply = function* (next) {
                     lang: 'en'
                 }
             ]
-            var users = yield wechatApi.fetchUsers(openIds)
+            var users = yield wechatApi.fetchUsers(openIds) // 获取多个用户信息
             console.log(users)
 
             reply = JSON.stringify(user)
         }
+        else if (content === '14') {
+            var user = yield wechatApi.listUser() // 获取用户列表
+            console.log(user)
+
+            var user2 = yield wechatApi.listUser(user.next_openid)
+
+            reply = JSON.stringify(user)
+        }
+
 
         this.body = reply;
     }
